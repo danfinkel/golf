@@ -1,17 +1,24 @@
-# Trading Strokes
+# Training Strokes
 
 A personal iPhone app that signs in to TrackMan and shows dashboards of your
-golf data. Phase one has two cards:
+golf data, in two tabs along the bottom:
 
-- **Average drive**: each course round's drive average, with a 5-round rolling average.
-- **Swings per day**: full swings (putting excluded) for the last 30 days.
+- **Home**: swings this month and all time, practice streak, TrackMan
+  handicap, a month calendar of TrackMan days, the latest round, and swings
+  per day.
+- **Driver**: drive distance per round with a 5-round average, longest
+  drive, fairways hit and missed left or right, and practice driver numbers
+  (carry, ball and club speed, smash, launch, spin, dispersion) for 30 days,
+  90 days or all time.
 
-Data is cached on the phone (SwiftData) and refreshed incrementally. There is
+Data is cached on the phone (SwiftData) and refreshed incrementally. Practice
+shots are downloaded once per session, so the first sync after installing
+takes longer. There is
 no backend.
 
 The project, target and bundle id keep the working name `GolfDash`, so an
 installed copy updates in place and stays signed in. The home-screen name,
-icon and theme are Trading Strokes: the icon source is
+icon and theme are Training Strokes: the icon source is
 `design/app-icon.svg`, the colors are in `GolfDash/Assets.xcassets` (light
 and dark), and `GolfDash/Theme.swift` holds the fonts and the welcome-screen
 mark. The landing page is `site/index.html`.
@@ -70,6 +77,7 @@ URLs live in `Packages/TrackManKit/Sources/TrackManKit/TrackManConfig.swift`.
 | `Packages/TrackManKit` | Portal session and token renewal, Keychain, GraphQL client and queries, metrics. Unit tested. |
 | `GolfDash/Auth` | Session state and the TrackMan login sheet |
 | `GolfDash/Store` | SwiftData models and sync |
-| `GolfDash/Views` | Dashboard, detail screens, settings |
+| `GolfDash/Views` | Tab bar, Home, Driver, detail screens, settings |
+| `tools/find_handicap_field.py` | Lists TrackMan schema fields that look like a handicap |
 
 Never commit a TrackMan token; `.gitignore` excludes the POC's `token` file.

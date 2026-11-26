@@ -10,7 +10,7 @@ struct GolfDashApp: App {
             RootView()
                 .environmentObject(session)
         }
-        .modelContainer(for: [StoredRound.self, StoredActivity.self])
+        .modelContainer(for: [StoredRound.self, StoredActivity.self, StoredShot.self])
     }
 }
 
@@ -27,7 +27,7 @@ struct RootView: View {
                 case .signedOut:
                     WelcomeView()
                 case .signedIn:
-                    DashboardView()
+                    MainTabView()
                 }
             }
             if showSplash {
@@ -59,7 +59,7 @@ struct SplashView: View {
                 BallFlightMark()
                     .frame(width: 112, height: 112)
                     .shadow(color: .black.opacity(0.3), radius: 14, y: 8)
-                Text("Trading Strokes")
+                Text("Training Strokes")
                     .font(Theme.display())
                     .foregroundStyle(.white)
                 Text("Know where your strokes go.")

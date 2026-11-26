@@ -1,6 +1,6 @@
-<title>Trading Strokes</title>
+<title>Training Strokes</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Trading Strokes turns your TrackMan sessions and rounds into simple dashboards on your iPhone.">
+<meta name="description" content="Training Strokes turns your TrackMan sessions and rounds into simple dashboards on your iPhone.">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: green hero band with wordmark + phone, then a two-column feature grid, then a privacy strip and footer */
@@ -54,7 +54,7 @@ h2{font-family:var(--display);font-weight:700;font-size:clamp(34px,5vw,52px);lin
 .private p{margin:0;color:var(--muted)}
 .name{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;align-items:center}
 @media (max-width:760px){.name{grid-template-columns:minmax(0,1fr)}}
-.card-row{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);font-variant-numeric:tabular-nums;text-align:center}
+.card-row{display:grid;grid-template-columns:1.2fr repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--card);font-variant-numeric:tabular-nums;text-align:center}
 .card-row div{padding:8px 0;border-left:1px solid var(--line);font-size:14px}
 .card-row div:first-child{border-left:0}
 .card-row .hd{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;background:var(--ground)}
@@ -70,16 +70,16 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   <div>
    <div class="brand">
     <svg viewBox="0 0 1024 1024" aria-hidden="true"><defs><linearGradient id="ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#23663f"/><stop offset="1" stop-color="#103322"/></linearGradient></defs><rect width="1024" height="1024" fill="url(#ig)"/><rect x="120" y="746" width="784" height="28" rx="14" fill="#7fb08f"/><path d="M160 760 Q470 -150 864 600" fill="none" stroke="#fff" stroke-width="52" stroke-linecap="round"/><circle cx="864" cy="600" r="66" fill="#f2c94c"/></svg>
-    <span>Trading Strokes</span>
+    <span>Training Strokes</span>
    </div>
    <h1>Know where your <em>strokes</em> go.</h1>
-   <p class="lede">Trading Strokes signs in to your TrackMan account and turns every range session and simulator round into a few clear charts on your iPhone.</p>
+   <p class="lede">Training Strokes signs in to your TrackMan account and turns every range session and simulator round into a few clear charts on your iPhone.</p>
    <div class="cta">
     <a class="btn" href="https://github.com/danfinkel/golf">Build it from GitHub</a>
     <span class="note">iPhone, iOS 17 or later. Personal build, not on the App Store.</span>
    </div>
   </div>
-  <div class="phone" aria-label="The Trading Strokes dashboard with example numbers">
+  <div class="phone" aria-label="The Training Strokes dashboard with example numbers">
    <div class="s">Updated 2 min ago</div>
    <div class="t">Hi there</div>
    <div class="pc"><div class="h"><div><b>Average drive</b><small>Course rounds, 5-round average</small></div><div class="n">247 yd</div></div>
@@ -94,13 +94,13 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
  <section>
   <div class="in">
    <p class="eyebrow">What you see</p>
-   <h2>Two numbers that tell you if practice is working</h2>
-   <p class="intro">TrackMan records every shot in detail. Trading Strokes picks out the trends you actually check: how far the ball goes, and how much you are hitting. Tap a card for the full history.</p>
+   <h2>Your month on Home, your big stick on Driver</h2>
+   <p class="intro">Two tabs along the bottom, with more to come. Home shows how much you are practicing and where your game stands. Driver gathers every number about the club you hit first.</p>
    <div class="grid">
-    <div class="f"><div class="k">247<small>yd</small></div><h3>Average drive</h3><p>Your driving distance from each course round, smoothed over the last five so a single wild round does not swing the line.</p></div>
-    <div class="f"><div class="k">412<small>swings</small></div><h3>Swings per day</h3><p>Full swings for the last 30 days, putting left out. The detail view splits each day by session type.</p></div>
-    <div class="f soon"><div class="k">Next</div><h3>More of your game</h3><p>Club gapping, dispersion and other apps beyond TrackMan are on the list.</p></div>
-    <div class="f"><div class="k">Pull<small>to refresh</small></div><h3>Fast after the first load</h3><p>Rounds and sessions are saved on the phone, so the app opens instantly and only fetches what is new.</p></div>
+    <div class="f"><div class="k">412<small>swings</small></div><h3>Home: swings and streaks</h3><p>Swings this month and all time, your practice streak, and a calendar that shades each TrackMan day by how much you hit.</p></div>
+    <div class="f"><div class="k">14.2<small>hcp</small></div><h3>Home: handicap and latest round</h3><p>Your TrackMan handicap next to your last round's score, putts, fairways and greens.</p></div>
+    <div class="f"><div class="k">247<small>yd</small></div><h3>Driver: on the course</h3><p>Drive distance per round with a five-round average, your longest drive, and how often tee shots find the fairway or miss left or right.</p></div>
+    <div class="f"><div class="k">152<small>mph</small></div><h3>Driver: in practice</h3><p>Carry, ball and club speed, smash, launch and spin from every practice drive, plus a dispersion chart of where they land.</p></div>
    </div>
   </div>
  </section>
@@ -117,12 +117,12 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   <div class="in name">
    <div>
     <p class="eyebrow">The name</p>
-    <h2>Trading strokes</h2>
-    <p class="intro" style="margin:0">In a match between friends, the better player gives strokes on the hardest holes so the game stays fair. This app is about the other kind of trade: practice time in, strokes off your score.</p>
+    <h2>Training strokes</h2>
+    <p class="intro" style="margin:0">Every ball you hit on the range is a training stroke. Training Strokes counts them, shows what they turn into on the course, and makes it obvious when practice is paying off.</p>
    </div>
-   <div class="card-row" role="img" aria-label="A scorecard row with a stroke given on the hardest hole">
-    <div class="hd">Hole</div><div class="hd">1</div><div class="hd">2</div><div class="hd">3</div><div class="hd">4</div><div class="hd">5</div><div class="hd">6</div><div class="hd">7</div><div class="hd">8</div>
-    <div class="hd">Hcp</div><div>7</div><div>15</div><div class="dot">1</div><div>11</div><div>5</div><div>17</div><div>3</div><div>13</div>
+   <div class="card-row" role="img" aria-label="A week of practice with swing counts, the busiest day highlighted">
+    <div class="hd">Day</div><div class="hd">Mon</div><div class="hd">Tue</div><div class="hd">Wed</div><div class="hd">Thu</div><div class="hd">Fri</div><div class="hd">Sat</div><div class="hd">Sun</div>
+    <div class="hd">Swings</div><div>64</div><div>0</div><div>88</div><div>0</div><div>41</div><div class="dot">120</div><div>0</div>
    </div>
   </div>
  </section>
@@ -130,7 +130,7 @@ footer .in{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 
 <footer>
  <div class="in">
-  <span>Trading Strokes is a personal project and is not affiliated with TrackMan.</span>
+  <span>Training Strokes is a personal project and is not affiliated with TrackMan.</span>
   <span>Example numbers shown.</span>
  </div>
 </footer>

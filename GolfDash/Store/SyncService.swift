@@ -7,9 +7,15 @@ import TrackManKit
 final class SyncService: ObservableObject {
     @Published private(set) var isSyncing = false
     @Published private(set) var lastError: String?
+    /// "Loading shots 3 of 40" while session shots download.
+    @Published private(set) var progress: String?
     @Published private(set) var lastSynced: Date? = UserDefaults.standard.object(forKey: SyncService.lastSyncedKey) as? Date
 
+    /// The player's TrackMan handicap from the last successful sync.
+    @Published private(set) var handicap: Double? = UserDefaults.standard.object(forKey: SyncService.handicapKey) as? Double
+
     private static let lastSyncedKey = "lastSynced"
+    private static let handicapKey = "trackmanHandicap"
 
     func sync(session: AppSession, context: ModelContext, fullResync: Bool = false) async {
         guard !isSyncing else { return }
@@ -32,6 +38,12 @@ final class SyncService: ObservableObject {
             try upsert(cards, into: context)
             try upsert(activities, into: context)
             try context.save()
+            // The handicap is a bonus: a failure here must not fail the sync.
+            if let hcp = try? await api.handicap() {
+                handicap = hcp
+                UserDefaults.standard.set(hcp, forKey: Self.handicapKey)
+            }
+            try await fetchShots(api: api, context: context)
 
             let now = Date()
             lastSynced = now
@@ -45,9 +57,37 @@ final class SyncService: ObservableObject {
     func clearCache(context: ModelContext) {
         try? context.delete(model: StoredRound.self)
         try? context.delete(model: StoredActivity.self)
+        try? context.delete(model: StoredShot.self)
         try? context.save()
         lastSynced = nil
+        handicap = nil
         UserDefaults.standard.removeObject(forKey: Self.lastSyncedKey)
+        UserDefaults.standard.removeObject(forKey: Self.handicapKey)
+    }
+
+    /// Downloads shots for practice sessions not fetched yet, newest first,
+    /// saving as it goes so an interrupted sync keeps its progress.
+    private func fetchShots(api: TrackManAPI, context: ModelContext) async throws {
+        defer { progress = nil }
+        let pending = try context.fetch(FetchDescriptor<StoredActivity>(sortBy: [SortDescriptor(\StoredActivity.date, order: .reverse)]))
+            .filter { !$0.shotsFetched && ($0.strokeCount ?? 0) > 0 && Metrics.isFullSwing(typename: $0.typename, kind: $0.kind) }
+        for (index, activity) in pending.enumerated() {
+            progress = "Loading shots, session \(index + 1) of \(pending.count)"
+            let strokes: [Stroke]
+            do {
+                strokes = try await api.strokes(activityID: activity.id)
+            } catch let error as AuthError {
+                throw error
+            } catch {
+                continue // Try this session again on the next sync.
+            }
+            for (number, stroke) in strokes.enumerated() {
+                context.insert(StoredShot(activityID: activity.id, index: number, sessionDate: activity.date, stroke: stroke))
+            }
+            activity.shotsFetched = true
+            if index % 10 == 9 { try context.save() }
+        }
+        try context.save()
     }
 
     private func upsert(_ cards: [Scorecard], into context: ModelContext) throws {

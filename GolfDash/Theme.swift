@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Trading Strokes' look: fairway greens with a flag-yellow highlight and
+/// Training Strokes' look: fairway greens with a flag-yellow highlight and
 /// condensed, scoreboard-style numbers. Colors live in Assets.xcassets with
 /// light and dark variants.
 enum Theme {

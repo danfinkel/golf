@@ -13,7 +13,7 @@ struct WelcomeView: View {
             BallFlightMark()
                 .frame(width: 120, height: 120)
                 .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
-            Text("Trading Strokes")
+            Text("Training Strokes")
                 .font(Theme.display())
                 .foregroundStyle(Theme.ink)
             Text(session.sessionEnded
