@@ -33,6 +33,7 @@ struct DashboardView: View {
                 }
                 .padding()
             }
+            .background(Theme.ground.ignoresSafeArea())
             .navigationTitle(session.displayName.map { "Hi, \($0)" } ?? "Overview")
             .refreshable { await sync.sync(session: session, context: context) }
             .toolbar {
@@ -92,19 +93,20 @@ struct DashboardCard<Content: View>: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.headline)
+                    Text(title).font(.headline).foregroundStyle(Theme.ink)
                     Text(subtitle).font(.subheadline).foregroundStyle(.secondary)
                 }
                 Spacer()
                 if let headline {
-                    Text(headline).font(.title2.bold()).monospacedDigit()
+                    Text(headline).font(Theme.score(.title)).foregroundStyle(Theme.pine)
                 }
                 Image(systemName: "chevron.right").font(.footnote).foregroundStyle(.tertiary)
             }
             content
         }
         .padding()
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16))
+        .shadow(color: Theme.ink.opacity(0.06), radius: 1, y: 1)
         .contentShape(RoundedRectangle(cornerRadius: 16))
     }
 }

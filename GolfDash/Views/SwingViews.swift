@@ -21,7 +21,7 @@ struct SwingsCard: View {
                         x: .value("Day", day.day, unit: .day),
                         y: .value("Swings", day.count)
                     )
-                    .foregroundStyle(Color.accentColor)
+                    .foregroundStyle(day.day == days.last?.day ? Theme.pine : Theme.fairway)
                 }
                 .frame(height: 140)
             }

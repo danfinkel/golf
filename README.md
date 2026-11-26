@@ -1,4 +1,4 @@
-# Golf Dash
+# Trading Strokes
 
 A personal iPhone app that signs in to TrackMan and shows dashboards of your
 golf data. Phase one has two cards:
@@ -8,6 +8,13 @@ golf data. Phase one has two cards:
 
 Data is cached on the phone (SwiftData) and refreshed incrementally. There is
 no backend.
+
+The project, target and bundle id keep the working name `GolfDash`, so an
+installed copy updates in place and stays signed in. The home-screen name,
+icon and theme are Trading Strokes: the icon source is
+`design/app-icon.svg`, the colors are in `GolfDash/Assets.xcassets` (light
+and dark), and `GolfDash/Theme.swift` holds the fonts and the welcome-screen
+mark. The landing page is `site/index.html`.
 
 ## Run it
 

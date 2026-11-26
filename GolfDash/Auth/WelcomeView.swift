@@ -10,11 +10,12 @@ struct WelcomeView: View {
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
-            Image(systemName: "figure.golf")
-                .font(.system(size: 64))
-                .foregroundStyle(.tint)
-            Text("Golf Dash")
-                .font(.largeTitle.bold())
+            BallFlightMark()
+                .frame(width: 120, height: 120)
+                .shadow(color: .black.opacity(0.18), radius: 10, y: 6)
+            Text("Trading Strokes")
+                .font(Theme.display())
+                .foregroundStyle(Theme.ink)
             Text(session.sessionEnded
                  ? "Your TrackMan session ended. Sign in again to pick up where you left off."
                  : "Sign in with your TrackMan account to see your drive distance and practice volume.")
@@ -46,6 +47,7 @@ struct WelcomeView: View {
                 .multilineTextAlignment(.center)
         }
         .padding(24)
+        .background(Theme.ground.ignoresSafeArea())
         .task {
             // TrackMan ended the session: reopen the login sheet right away.
             // The saved login usually finishes it with no typing.
