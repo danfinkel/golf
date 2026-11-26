@@ -17,6 +17,8 @@ public enum Queries {
           grossScore
           netScore
           toPar
+          outScore
+          inScore
           courseHcp
           stat {
             driveAverage
@@ -27,6 +29,21 @@ public enum Queries {
             fairwayHitRight
             greenInRegulation
             numberOfPutts
+            eagles
+            birdies
+            pars
+            bogeys
+            doubleBogeys
+            tripleBogeysOrWorse
+          }
+          holes {
+            holeNumber
+            par
+            strokeIndex
+            distance
+            grossScore
+            putts
+            greenInRegulation
           }
         }
       }

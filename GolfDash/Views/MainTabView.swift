@@ -15,6 +15,8 @@ struct MainTabView: View {
                 .tabItem { Label("Home", systemImage: "house.fill") }
             DriverView(sync: sync)
                 .tabItem { Label("Driver", systemImage: "figure.golf") }
+            RoundsView(sync: sync)
+                .tabItem { Label("Rounds", systemImage: "flag.fill") }
         }
         .tint(Theme.pine)
         .task {

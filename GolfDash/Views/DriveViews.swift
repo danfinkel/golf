@@ -106,18 +106,22 @@ struct DriveDetailView: View {
             Section("Rounds") {
                 ForEach(points.reversed()) { point in
                     let round = roundsByID[point.id]
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(round?.courseName ?? "Course round")
-                            Text("\(point.date, format: .dateTime.month().day().year())\(round?.holesPlayed.map { " · \($0) holes" } ?? "")")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing) {
-                            Text(Format.yards(point.yards) ?? "").monospacedDigit()
-                            if let max = Format.yards(round?.driveMaxMeters.map(Units.yards(fromMeters:))) {
-                                Text("max \(max)").font(.footnote).foregroundStyle(.secondary)
+                    NavigationLink {
+                        if let round { RoundDetailView(round: round) }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(round?.courseName ?? "Course round")
+                                Text("\(point.date, format: .dateTime.month().day().year())\(round?.holesPlayed.map { " · \($0) holes" } ?? "")")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing) {
+                                Text(Format.yards(point.yards) ?? "").monospacedDigit()
+                                if let max = Format.yards(round?.driveMaxMeters.map(Units.yards(fromMeters:))) {
+                                    Text("max \(max)").font(.footnote).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }

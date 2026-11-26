@@ -9,7 +9,8 @@ struct DriverView: View {
     @EnvironmentObject private var session: AppSession
     @Environment(\.modelContext) private var context
     @ObservedObject var sync: SyncService
-    @Query(sort: \StoredRound.date) private var rounds: [StoredRound]
+    @Query(sort: \StoredRound.date) private var allRounds: [StoredRound]
+    private var rounds: [StoredRound] { allRounds.filter(\.isFinished) }
     @Query(filter: #Predicate<StoredShot> { $0.club == "Driver" }, sort: \StoredShot.date) private var drives: [StoredShot]
     @State private var range: PracticeRange = .ninety
 

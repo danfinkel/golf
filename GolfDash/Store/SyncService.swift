@@ -28,7 +28,9 @@ final class SyncService: ObservableObject {
             let knownActivities = Set(try context.fetch(FetchDescriptor<StoredActivity>()).map(\.id))
             let api = session.api
 
-            let cards = try await Paging.fetchNew(knownIDs: knownRounds, fullResync: fullResync) { skip, take in
+            // Rounds stored before scorecards were synced need one full pass.
+            let missingHoles = try context.fetch(FetchDescriptor<StoredRound>()).contains { $0.holesData == nil }
+            let cards = try await Paging.fetchNew(knownIDs: knownRounds, fullResync: fullResync || missingHoles) { skip, take in
                 try await api.scorecards(skip: skip, take: take)
             }
             let activities = try await Paging.fetchNew(knownIDs: knownActivities, fullResync: fullResync) { skip, take in

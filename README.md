@@ -1,7 +1,7 @@
 # Training Strokes
 
 A personal iPhone app that signs in to TrackMan and shows dashboards of your
-golf data, in two tabs along the bottom:
+golf data, in three tabs along the bottom:
 
 - **Home**: swings this month and all time, practice streak, TrackMan
   handicap, a month calendar of TrackMan days, the latest round, and swings
@@ -10,6 +10,12 @@ golf data, in two tabs along the bottom:
   drive, fairways hit and missed left or right, and practice driver numbers
   (carry, ball and club speed, smash, launch, spin, dispersion) for 30 days,
   90 days or all time.
+- **Rounds**: every finished round by month; tap one for its summary and
+  scorecard.
+
+Tapping a day on the Home calendar shows that day's rounds, sessions and
+per-club averages. Only finished rounds count anywhere: completed in
+TrackMan, or a full 9 or 18 holes.
 
 Data is cached on the phone (SwiftData) and refreshed incrementally. Practice
 shots are downloaded once per session, so the first sync after installing

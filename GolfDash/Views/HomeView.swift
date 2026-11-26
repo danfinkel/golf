@@ -8,7 +8,8 @@ struct HomeView: View {
     @EnvironmentObject private var session: AppSession
     @Environment(\.modelContext) private var context
     @ObservedObject var sync: SyncService
-    @Query(sort: \StoredRound.date) private var rounds: [StoredRound]
+    @Query(sort: \StoredRound.date) private var allRounds: [StoredRound]
+    private var rounds: [StoredRound] { allRounds.filter(\.isFinished) }
     @Query(sort: \StoredActivity.date) private var activities: [StoredActivity]
     @State private var showSettings = false
     @State private var month = Date()
@@ -61,7 +62,12 @@ struct HomeView: View {
                     }
                     MonthCalendarCard(month: $month, activities: samples, roundDates: rounds.map(\.date))
                     if let latest = rounds.last {
-                        LatestRoundCard(round: latest)
+                        NavigationLink {
+                            RoundDetailView(round: latest)
+                        } label: {
+                            LatestRoundCard(round: latest)
+                        }
+                        .buttonStyle(.plain)
                     }
                     NavigationLink {
                         SwingsDetailView(days: swings)
@@ -138,13 +144,25 @@ struct MonthCalendarCard: View {
                 }
                 ForEach(0..<leadingBlanks, id: \.self) { _ in Color.clear.frame(height: 34) }
                 ForEach(log) { day in
-                    DayCell(day: day, intensity: Double(day.swings) / Double(maxSwings),
-                            isToday: calendar.isDateInToday(day.day))
+                    let cell = DayCell(day: day, intensity: Double(day.swings) / Double(maxSwings),
+                                       isToday: calendar.isDateInToday(day.day))
+                    if day.isActive {
+                        NavigationLink {
+                            DayDetailView(day: day.day)
+                        } label: {
+                            cell
+                        }
+                        .buttonStyle(.plain)
+                    } else {
+                        cell
+                    }
                 }
             }
             HStack(spacing: 14) {
                 Legend(color: Theme.fairway, text: "Practice")
                 Legend(color: Theme.flag, text: "Round", ring: true)
+                Spacer()
+                Text("Tap a day for details")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
@@ -223,8 +241,7 @@ struct LatestRoundCard: View {
             title: "Latest round",
             subtitle: [round.courseName, round.date.formatted(.dateTime.month().day()), round.holesPlayed.map { "\($0) holes" }]
                 .compactMap { $0 }.joined(separator: " · "),
-            headline: score,
-            showsChevron: false
+            headline: score
         ) {
             HStack {
                 miniStat("Putts", round.putts.map { "\($0)" })

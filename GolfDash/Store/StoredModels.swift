@@ -24,6 +24,16 @@ final class StoredRound {
     var greensInRegulation: Int?
     var putts: Int?
     var topBallSpeedMetersPerSecond: Double?
+    var outScore: Int?
+    var inScore: Int?
+    var eagles: Int?
+    var birdies: Int?
+    var pars: Int?
+    var bogeys: Int?
+    var doubleBogeys: Int?
+    var triplesOrWorse: Int?
+    /// The scorecard's holes as JSON; nil until a sync has fetched them.
+    var holesData: Data?
 
     init(id: String, date: Date) {
         self.id = id
@@ -49,7 +59,27 @@ final class StoredRound {
         greensInRegulation = card.stat?.greenInRegulation
         putts = card.stat?.numberOfPutts
         topBallSpeedMetersPerSecond = card.stat?.highestBallSpeed
+        outScore = card.outScore
+        inScore = card.inScore
+        eagles = card.stat?.eagles
+        birdies = card.stat?.birdies
+        pars = card.stat?.pars
+        bogeys = card.stat?.bogeys
+        doubleBogeys = card.stat?.doubleBogeys
+        triplesOrWorse = card.stat?.tripleBogeysOrWorse
+        holesData = try? JSONEncoder().encode(card.holes ?? [])
     }
+
+    var holes: [Scorecard.Hole] {
+        guard let holesData else { return [] }
+        return (try? JSONDecoder().decode([Scorecard.Hole].self, from: holesData)) ?? []
+    }
+
+    /// Completed, or a full 9 or 18 holes. Unfinished rounds are left out
+    /// of every screen and stat.
+    var isFinished: Bool { RoundMetrics.isFinished(isCompleted: isCompleted, holesPlayed: holesPlayed) }
+
+    var toParLabel: String? { toPar.map(RoundMetrics.toParLabel) }
 
     var sample: RoundSample { RoundSample(id: id, date: date, driveAverageMeters: driveAverageMeters) }
 }

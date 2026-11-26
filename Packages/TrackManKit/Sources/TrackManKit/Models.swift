@@ -13,8 +13,33 @@ public struct Scorecard: Decodable, Sendable, Identifiable, Equatable {
     public let grossScore: Int?
     public let netScore: Int?
     public let toPar: Int?
+    public let outScore: Int?
+    public let inScore: Int?
     public let courseHcp: Double?
     public let stat: Stat?
+    public let holes: [Hole]?
+
+    /// One hole of the scorecard. Distance is meters.
+    public struct Hole: Codable, Sendable, Equatable {
+        public let holeNumber: Int?
+        public let par: Int?
+        public let strokeIndex: Int?
+        public let distance: Double?
+        public let grossScore: Int?
+        public let putts: Int?
+        public let greenInRegulation: Bool?
+
+        public init(holeNumber: Int?, par: Int?, strokeIndex: Int? = nil, distance: Double? = nil,
+                    grossScore: Int?, putts: Int? = nil, greenInRegulation: Bool? = nil) {
+            self.holeNumber = holeNumber
+            self.par = par
+            self.strokeIndex = strokeIndex
+            self.distance = distance
+            self.grossScore = grossScore
+            self.putts = putts
+            self.greenInRegulation = greenInRegulation
+        }
+    }
 
     public struct Course: Decodable, Sendable, Equatable {
         public let displayName: String?
@@ -31,6 +56,12 @@ public struct Scorecard: Decodable, Sendable, Identifiable, Equatable {
         public let fairwayHitRight: Int?
         public let greenInRegulation: Int?
         public let numberOfPutts: Int?
+        public let eagles: Int?
+        public let birdies: Int?
+        public let pars: Int?
+        public let bogeys: Int?
+        public let doubleBogeys: Int?
+        public let tripleBogeysOrWorse: Int?
     }
 
     public var date: Date? { TrackManDate.parse(startedAt) ?? TrackManDate.parse(createdAt) }
