@@ -33,8 +33,12 @@ struct RoundsView: View {
                     LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                         StatTile(label: "Rounds", value: "\(rounds.count)",
                                  detail: "\(eighteens.count) of 18, \(nines.count) of 9")
+                        StatTile(label: "Best score", value: eighteens.min().map { "\($0)" } ?? "–",
+                                 detail: nines.min().map { "Best 9: \($0)" } ?? "18 holes")
                         StatTile(label: "18-hole average", value: average(eighteens) ?? "–",
-                                 detail: eighteens.min().map { "Best \($0)" } ?? "No 18-hole rounds")
+                                 detail: eighteens.isEmpty ? "No 18-hole rounds" : "\(eighteens.count) rounds")
+                        StatTile(label: "9-hole average", value: average(nines) ?? "–",
+                                 detail: nines.isEmpty ? "No 9-hole rounds" : "\(nines.count) rounds")
                     }
                     .listRowInsets(EdgeInsets())
                     .listRowBackground(Color.clear)
