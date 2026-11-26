@@ -32,27 +32,27 @@ cd Packages/TrackManKit && swift test
 
 ## How sign-in works
 
-TrackMan has no public API. The app signs in the same way the TrackMan web
-portal does:
+TrackMan has no public API, and its web portal signs in on its own server
+(it holds the OAuth client secret), so the app cannot redeem a login code
+itself. Instead it signs in through the portal, like a browser:
 
-1. Opens `login.trackmangolf.com/connect/authorize` (OAuth code flow + PKCE)
-   in an in-app web view. You enter credentials on TrackMan's own page.
-2. Intercepts the redirect to `portal.trackmangolf.com/account/callback`
-   and reads the authorization code.
-3. Exchanges it at `/connect/token` for an access token (7 days) and a
-   refresh token, stored in the Keychain.
-4. Refreshes silently before each sync; you only sign in again if the
-   refresh token is revoked.
+1. The login sheet loads `portal.trackmangolf.com` in a web view, which sends
+   you to TrackMan's own login page. You type your credentials there.
+2. Once the web view is back on the portal, the app reads the portal's
+   `/api/account/me`, which returns the bearer token the portal itself uses
+   (valid 7 days). The token is stored in the Keychain.
+3. The web view keeps the portal session cookie. When the token expires, the
+   app calls `/api/account/me` again with that cookie for a fresh one, so you
+   only sign in again when the portal session ends.
 
-This borrows the portal's public OAuth client id, which is undocumented and
-may change. All of those values live in
-`Packages/TrackManKit/Sources/TrackManKit/TrackManConfig.swift`.
+This relies on undocumented portal behaviour that TrackMan could change. The
+URLs live in `Packages/TrackManKit/Sources/TrackManKit/TrackManConfig.swift`.
 
 ## Layout
 
 | Path | What |
 | --- | --- |
-| `Packages/TrackManKit` | OAuth/PKCE, Keychain, GraphQL client and queries, metrics. Unit tested. |
+| `Packages/TrackManKit` | Portal session and token renewal, Keychain, GraphQL client and queries, metrics. Unit tested. |
 | `GolfDash/Auth` | Session state and the TrackMan login sheet |
 | `GolfDash/Store` | SwiftData models and sync |
 | `GolfDash/Views` | Dashboard, detail screens, settings |

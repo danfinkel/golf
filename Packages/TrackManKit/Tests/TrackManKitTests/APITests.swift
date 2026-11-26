@@ -5,11 +5,13 @@ final class APITests: XCTestCase {
     private func makeAPI(_ responses: [(Int, String)], tokens: TokenSet) -> (TrackManAPI, StubTransport) {
         let transport = StubTransport(responses)
         let now = Date(timeIntervalSince1970: 0)
-        let provider = TokenProvider(client: OAuthClient(transport: transport, now: { now }), store: InMemoryTokenStore(tokens), now: { now })
+        let cookie = HTTPCookie(properties: [.domain: "portal.trackmangolf.com", .path: "/", .name: "s", .value: "1"])!
+        let refresher = PortalSessionClient(transport: transport, cookies: { [cookie] }, now: { now })
+        let provider = TokenProvider(refresher: refresher, store: InMemoryTokenStore(tokens), now: { now })
         return (TrackManAPI(client: GraphQLClient(transport: transport, tokens: provider)), transport)
     }
 
-    private let valid = TokenSet(accessToken: "AT", refreshToken: "RT", expiresAt: .distantFuture)
+    private let valid = TokenSet(accessToken: "AT", expiresAt: .distantFuture)
 
     func testScorecardsDecodeFromListShape() async throws {
         let json = #"{"data":{"me":{"scorecards":[{"id":"r1","startedAt":"2026-11-23T11:26:56.6687807Z","course":{"displayName":"Bay Harbor"},"numberOfHolesPlayed":9,"isCompleted":true,"stat":{"driveAverage":182.1,"driveMax":192.5}}]}}}"#
@@ -50,7 +52,7 @@ final class APITests: XCTestCase {
         let ok = #"{"data":{"me":{"scorecards":[]}}}"#
         let (api, transport) = makeAPI([
             (401, ""),
-            (200, #"{"access_token":"AT2","expires_in":3600}"#),
+            (200, #"{"accessToken":"AT2","expires":3600,"isAuthenticated":true}"#),
             (200, ok),
         ], tokens: valid)
 
@@ -58,7 +60,7 @@ final class APITests: XCTestCase {
 
         let sent = transport.recorded
         XCTAssertEqual(sent.count, 3)
-        XCTAssertEqual(sent[1].url?.path, "/connect/token")
+        XCTAssertEqual(sent[1].url?.path, "/api/account/me")
         XCTAssertEqual(sent[2].value(forHTTPHeaderField: "Authorization"), "Bearer AT2")
     }
 

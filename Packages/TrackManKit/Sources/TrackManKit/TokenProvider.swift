@@ -1,16 +1,16 @@
 import Foundation
 
-/// Hands out a valid access token, refreshing it silently when it is about to
-/// expire. Concurrent callers share one refresh.
+/// Hands out a valid access token, renewing it from the portal session when
+/// it is about to expire. Concurrent callers share one renewal.
 public actor TokenProvider {
-    private let client: OAuthClient
+    private let refresher: TokenRefresher
     private let store: TokenStore
     private let now: @Sendable () -> Date
     private var tokens: TokenSet?
     private var refreshTask: Task<TokenSet, Error>?
 
-    public init(client: OAuthClient, store: TokenStore, now: @escaping @Sendable () -> Date = { Date() }) {
-        self.client = client
+    public init(refresher: TokenRefresher, store: TokenStore, now: @escaping @Sendable () -> Date = { Date() }) {
+        self.refresher = refresher
         self.store = store
         self.now = now
         self.tokens = try? store.load()
@@ -36,15 +36,15 @@ public actor TokenProvider {
         if !forceRefresh, !current.isExpired(at: now()) {
             return current.accessToken
         }
-        return try await refreshed(from: current).accessToken
+        return try await refreshed().accessToken
     }
 
-    private func refreshed(from current: TokenSet) async throws -> TokenSet {
+    private func refreshed() async throws -> TokenSet {
         if let inFlight = refreshTask {
             return try await inFlight.value
         }
-        let client = self.client
-        let task = Task { try await client.refresh(current) }
+        let refresher = self.refresher
+        let task = Task { try await refresher.refresh() }
         refreshTask = task
         defer { refreshTask = nil }
         do {

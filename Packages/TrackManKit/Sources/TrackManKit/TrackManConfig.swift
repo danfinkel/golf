@@ -1,45 +1,38 @@
 import Foundation
 
-/// Endpoints and OAuth client settings for TrackMan.
+/// TrackMan endpoints.
 ///
-/// TrackMan has no public developer API. These values mirror what the
-/// TrackMan web portal (portal.trackmangolf.com) uses, observed in Nov 2026.
-/// If TrackMan changes them, this is the only file that needs updating.
+/// TrackMan has no public developer API. The web portal signs in on its own
+/// server (it holds the OAuth client secret) and hands the browser a bearer
+/// token from `/api/account/me`, keyed by the portal's session cookie. The app
+/// signs in on that portal page and reads the same endpoint (observed Nov 2026).
+/// If TrackMan changes any of this, this is the only file to update.
 public struct TrackManConfig: Sendable, Equatable {
-    public var issuer: URL
-    public var clientID: String
-    public var redirectURI: URL
-    public var scopes: [String]
+    public var portalURL: URL
+    public var sessionPath: String
     public var graphQLURL: URL
-    /// Sent as Origin/Referer on API calls, matching the web portal.
-    public var webOrigin: String
 
-    public init(issuer: URL, clientID: String, redirectURI: URL, scopes: [String], graphQLURL: URL, webOrigin: String) {
-        self.issuer = issuer
-        self.clientID = clientID
-        self.redirectURI = redirectURI
-        self.scopes = scopes
+    public init(portalURL: URL, sessionPath: String, graphQLURL: URL) {
+        self.portalURL = portalURL
+        self.sessionPath = sessionPath
         self.graphQLURL = graphQLURL
-        self.webOrigin = webOrigin
     }
 
     public static let portal = TrackManConfig(
-        issuer: URL(string: "https://login.trackmangolf.com")!,
-        clientID: "golf-portal.2dad6810-ef7c-4a0d-9c0a-0eaae2fb9e98",
-        redirectURI: URL(string: "https://portal.trackmangolf.com/account/callback")!,
-        scopes: [
-            "openid",
-            "profile",
-            "email",
-            "offline_access",
-            "https://auth.trackman.com/dr/cloud",
-            "https://auth.trackman.com/authorization",
-            "https://auth.trackman.com/proamevent",
-        ],
-        graphQLURL: URL(string: "https://api.trackmangolf.com/graphql")!,
-        webOrigin: "https://portal.trackmangolf.com"
+        portalURL: URL(string: "https://portal.trackmangolf.com/")!,
+        sessionPath: "/api/account/me",
+        graphQLURL: URL(string: "https://api.trackmangolf.com/graphql")!
     )
 
-    public var authorizeEndpoint: URL { issuer.appendingPathComponent("connect/authorize") }
-    public var tokenEndpoint: URL { issuer.appendingPathComponent("connect/token") }
+    public var sessionURL: URL { URL(string: sessionPath, relativeTo: portalURL)!.absoluteURL }
+    public var portalHost: String { portalURL.host ?? "portal.trackmangolf.com" }
+    /// Sent as Origin/Referer on API calls, matching the web portal.
+    public var webOrigin: String { "https://\(portalHost)" }
+
+    /// True once the login web view is back on the portal (signed in), rather
+    /// than on the TrackMan login pages.
+    public func isPortalPage(_ url: URL?) -> Bool {
+        guard let url, url.host?.lowercased() == portalHost.lowercased() else { return false }
+        return !url.path.lowercased().hasPrefix("/account/")
+    }
 }

@@ -3,8 +3,8 @@ import TrackManKit
 
 struct WelcomeView: View {
     @EnvironmentObject private var session: AppSession
-    @State private var request: AuthorizationRequest?
-    @State private var isExchanging = false
+    @State private var showLogin = false
+    @State private var isSaving = false
     @State private var errorMessage: String?
 
     var body: some View {
@@ -27,9 +27,9 @@ struct WelcomeView: View {
             }
             Button {
                 errorMessage = nil
-                request = AuthorizationRequest(config: session.config)
+                showLogin = true
             } label: {
-                if isExchanging {
+                if isSaving {
                     ProgressView().frame(maxWidth: .infinity)
                 } else {
                     Text("Sign in with TrackMan").frame(maxWidth: .infinity)
@@ -37,16 +37,16 @@ struct WelcomeView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(isExchanging)
+            .disabled(isSaving)
         }
         .padding(24)
-        .sheet(item: $request) { request in
+        .sheet(isPresented: $showLogin) {
             NavigationStack {
                 LoginWebView(
-                    request: request,
-                    onCode: { code in finish(code: code, request: request) },
+                    config: session.config,
+                    onTokens: { tokens in finish(with: tokens) },
                     onError: { error in
-                        self.request = nil
+                        showLogin = false
                         errorMessage = error.localizedDescription
                     }
                 )
@@ -55,7 +55,7 @@ struct WelcomeView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel") { self.request = nil }
+                        Button("Cancel") { showLogin = false }
                     }
                 }
             }
@@ -63,13 +63,13 @@ struct WelcomeView: View {
     }
 
     @MainActor
-    private func finish(code: String, request: AuthorizationRequest) {
-        self.request = nil
-        isExchanging = true
+    private func finish(with tokens: TokenSet) {
+        showLogin = false
+        isSaving = true
         Task { @MainActor in
-            defer { isExchanging = false }
+            defer { isSaving = false }
             do {
-                try await session.completeSignIn(code: code, request: request)
+                try await session.completeSignIn(with: tokens)
             } catch {
                 errorMessage = error.localizedDescription
             }

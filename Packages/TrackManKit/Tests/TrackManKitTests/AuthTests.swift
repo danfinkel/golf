@@ -2,101 +2,119 @@ import XCTest
 @testable import TrackManKit
 
 final class AuthTests: XCTestCase {
-    func testPKCEMatchesRFC7636Vector() {
-        let pkce = PKCE(verifier: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
-        XCTAssertEqual(pkce.challenge, "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+    private let sessionCookie = HTTPCookie(properties: [
+        .domain: "portal.trackmangolf.com",
+        .path: "/",
+        .name: "portal-session",
+        .value: "abc123",
+        .secure: "TRUE",
+    ])!
+
+    private let otherCookie = HTTPCookie(properties: [
+        .domain: "example.com",
+        .path: "/",
+        .name: "other",
+        .value: "nope",
+    ])!
+
+    private func accountJSON(token: String = "AT", expires: Double = 2_000_000, authenticated: Bool = true) -> String {
+        #"{"accessToken":"\#(token)","expires":\#(expires),"isAuthenticated":\#(authenticated),"name":"","refreshToken":"ignored"}"#
     }
 
-    func testGeneratedVerifierIsURLSafe() {
-        let verifier = PKCE.generate().verifier
-        XCTAssertGreaterThanOrEqual(verifier.count, 43)
-        XCTAssertNil(verifier.rangeOfCharacter(from: CharacterSet(charactersIn: "+/=")))
+    func testPortalPageDetection() {
+        let config = TrackManConfig.portal
+        XCTAssertTrue(config.isPortalPage(URL(string: "https://portal.trackmangolf.com/player")))
+        XCTAssertTrue(config.isPortalPage(URL(string: "https://portal.trackmangolf.com/")))
+        XCTAssertFalse(config.isPortalPage(URL(string: "https://portal.trackmangolf.com/account/callback?code=x")))
+        XCTAssertFalse(config.isPortalPage(URL(string: "https://login.trackmangolf.com/Account/Login")))
+        XCTAssertFalse(config.isPortalPage(nil))
+        XCTAssertEqual(config.sessionURL.absoluteString, "https://portal.trackmangolf.com/api/account/me")
     }
 
-    func testAuthorizeURLCarriesPortalClientAndPKCE() throws {
-        let request = AuthorizationRequest(config: .portal, pkce: PKCE(verifier: "v"), state: "abc", nonce: "n")
-        let items = URLComponents(url: request.url, resolvingAgainstBaseURL: false)!.queryItems!
-        func value(_ name: String) -> String? { items.first { $0.name == name }?.value }
-
-        XCTAssertEqual(request.url.host, "login.trackmangolf.com")
-        XCTAssertEqual(request.url.path, "/connect/authorize")
-        XCTAssertEqual(value("client_id"), TrackManConfig.portal.clientID)
-        XCTAssertEqual(value("redirect_uri"), "https://portal.trackmangolf.com/account/callback")
-        XCTAssertEqual(value("response_type"), "code")
-        XCTAssertEqual(value("code_challenge_method"), "S256")
-        XCTAssertEqual(value("code_challenge"), PKCE.challenge(for: "v"))
-        XCTAssertEqual(value("state"), "abc")
-        XCTAssertTrue(value("scope")!.contains("offline_access"))
+    func testPortalAccountParsesIntoTokenSet() {
+        let account = PortalAccount.parse(accountJSON(token: "AT", expires: 1_796_315_557))
+        XCTAssertEqual(account?.tokenSet(), TokenSet(accessToken: "AT", expiresAt: Date(timeIntervalSince1970: 1_796_315_557)))
     }
 
-    func testCallbackDetectionAndCodeExtraction() throws {
-        let request = AuthorizationRequest(config: .portal, state: "abc")
-        let callback = URL(string: "https://portal.trackmangolf.com/account/callback?code=XYZ&state=abc&iss=x")!
-        XCTAssertTrue(request.isCallback(callback))
-        XCTAssertFalse(request.isCallback(URL(string: "https://login.trackmangolf.com/Account/Login")!))
-        XCTAssertEqual(try request.code(fromCallback: callback), "XYZ")
+    func testSignedOutAccountHasNoTokens() {
+        XCTAssertNil(PortalAccount.parse(accountJSON(authenticated: false))?.tokenSet())
+        XCTAssertNil(PortalAccount.parse(#"{"isAuthenticated":false}"#)?.tokenSet())
+        XCTAssertNil(PortalAccount.parse("<html>login</html>"))
     }
 
-    func testCallbackRejectsWrongStateAndProviderErrors() {
-        let request = AuthorizationRequest(config: .portal, state: "abc")
-        XCTAssertThrowsError(try request.code(fromCallback: URL(string: "https://portal.trackmangolf.com/account/callback?code=X&state=evil")!)) {
-            XCTAssertEqual($0 as? AuthError, .stateMismatch)
-        }
-        XCTAssertThrowsError(try request.code(fromCallback: URL(string: "https://portal.trackmangolf.com/account/callback?error=access_denied&state=abc")!)) {
-            XCTAssertEqual($0 as? AuthError, .provider("access_denied"))
-        }
+    func testExpiryFallsBackToJWTClaim() {
+        let jwt = fakeJWT(#"{"exp":1800000000}"#)
+        let account = PortalAccount(accessToken: jwt, expires: nil, isAuthenticated: true)
+        XCTAssertEqual(account.tokenSet()?.expiresAt, Date(timeIntervalSince1970: 1_800_000_000))
     }
 
-    func testCodeExchangePostsPKCEFormAndParsesTokens() async throws {
-        let now = Date(timeIntervalSince1970: 1_000_000)
-        let transport = StubTransport([(200, #"{"access_token":"AT","refresh_token":"RT","expires_in":604800,"token_type":"Bearer"}"#)])
-        let client = OAuthClient(config: .portal, transport: transport, now: { now })
-        let request = AuthorizationRequest(config: .portal, pkce: PKCE(verifier: "verifier-123"), state: "s")
+    func testSessionClientSendsOnlyPortalCookies() async throws {
+        let transport = StubTransport([(200, accountJSON(token: "fresh", expires: 2_000_000))])
+        let cookies = [sessionCookie, otherCookie]
+        let client = PortalSessionClient(transport: transport, cookies: { cookies }, now: { Date(timeIntervalSince1970: 1_000_000) })
 
-        let tokens = try await client.exchange(code: "CODE", request: request)
+        let tokens = try await client.refresh()
 
-        XCTAssertEqual(tokens, TokenSet(accessToken: "AT", refreshToken: "RT", expiresAt: now.addingTimeInterval(604800)))
+        XCTAssertEqual(tokens.accessToken, "fresh")
         let sent = transport.recorded[0]
-        XCTAssertEqual(sent.url?.absoluteString, "https://login.trackmangolf.com/connect/token")
-        XCTAssertEqual(sent.httpMethod, "POST")
-        let fields = formFields(sent)
-        XCTAssertEqual(fields["grant_type"], "authorization_code")
-        XCTAssertEqual(fields["code"], "CODE")
-        XCTAssertEqual(fields["code_verifier"], "verifier-123")
-        XCTAssertEqual(fields["client_id"], TrackManConfig.portal.clientID)
-        XCTAssertEqual(fields["redirect_uri"], "https://portal.trackmangolf.com/account/callback")
+        XCTAssertEqual(sent.url?.absoluteString, "https://portal.trackmangolf.com/api/account/me")
+        XCTAssertEqual(sent.value(forHTTPHeaderField: "Cookie"), "portal-session=abc123")
     }
 
-    func testRefreshKeepsOldRefreshTokenWhenNotRotated() async throws {
-        let now = Date(timeIntervalSince1970: 0)
-        let transport = StubTransport([(200, #"{"access_token":"AT2","expires_in":100}"#)])
-        let client = OAuthClient(transport: transport, now: { now })
-        let tokens = try await client.refresh(TokenSet(accessToken: "AT1", refreshToken: "RT1", expiresAt: now))
-        XCTAssertEqual(tokens.accessToken, "AT2")
-        XCTAssertEqual(tokens.refreshToken, "RT1")
-        XCTAssertEqual(formFields(transport.recorded[0])["grant_type"], "refresh_token")
+    func testSessionClientRequiresReauthWhenSignedOutOrExpired() async {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let cases: [(Int, String)] = [
+            (200, accountJSON(authenticated: false)),
+            (200, "<html>TrackMan login</html>"),
+            (401, ""),
+            (200, accountJSON(expires: 999_999)),
+        ]
+        for response in cases {
+            let cookies = [sessionCookie]
+            let client = PortalSessionClient(transport: StubTransport([response]), cookies: { cookies }, now: { now })
+            do {
+                _ = try await client.refresh()
+                XCTFail("expected reauthentication for \(response)")
+            } catch {
+                XCTAssertEqual(error as? AuthError, .reauthenticationRequired)
+            }
+        }
     }
 
-    func testProviderRefreshesExpiredTokenAndPersistsIt() async throws {
-        let now = Date(timeIntervalSince1970: 10_000)
-        let store = InMemoryTokenStore(TokenSet(accessToken: "old", refreshToken: "RT", expiresAt: now.addingTimeInterval(-1)))
-        let transport = StubTransport([(200, #"{"access_token":"new","refresh_token":"RT2","expires_in":3600}"#)])
-        let provider = TokenProvider(client: OAuthClient(transport: transport, now: { now }), store: store, now: { now })
+    func testSessionClientWithoutCookiesRequiresReauth() async {
+        let transport = StubTransport([])
+        let client = PortalSessionClient(transport: transport, cookies: { [] })
+        do {
+            _ = try await client.refresh()
+            XCTFail("expected reauthentication")
+        } catch {
+            XCTAssertEqual(error as? AuthError, .reauthenticationRequired)
+        }
+        XCTAssertTrue(transport.recorded.isEmpty)
+    }
+
+    func testProviderRenewsExpiredTokenAndPersistsIt() async throws {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let store = InMemoryTokenStore(TokenSet(accessToken: "old", expiresAt: now.addingTimeInterval(-1)))
+        let transport = StubTransport([(200, accountJSON(token: "new", expires: 2_000_000))])
+        let cookies = [sessionCookie]
+        let refresher = PortalSessionClient(transport: transport, cookies: { cookies }, now: { now })
+        let provider = TokenProvider(refresher: refresher, store: store, now: { now })
 
         let token = try await provider.validAccessToken()
-
         XCTAssertEqual(token, "new")
-        XCTAssertEqual(try store.load()?.refreshToken, "RT2")
+        XCTAssertEqual(try store.load()?.accessToken, "new")
+
         let again = try await provider.validAccessToken()
         XCTAssertEqual(again, "new")
         XCTAssertEqual(transport.recorded.count, 1)
     }
 
-    func testRevokedRefreshTokenSignsOut() async throws {
-        let now = Date(timeIntervalSince1970: 10_000)
-        let store = InMemoryTokenStore(TokenSet(accessToken: "old", refreshToken: "RT", expiresAt: now))
-        let transport = StubTransport([(400, #"{"error":"invalid_grant"}"#)])
-        let provider = TokenProvider(client: OAuthClient(transport: transport, now: { now }), store: store, now: { now })
+    func testEndedSessionSignsOut() async throws {
+        let now = Date(timeIntervalSince1970: 1_000_000)
+        let store = InMemoryTokenStore(TokenSet(accessToken: "old", expiresAt: now))
+        let refresher = PortalSessionClient(transport: StubTransport([]), cookies: { [] }, now: { now })
+        let provider = TokenProvider(refresher: refresher, store: store, now: { now })
 
         do {
             _ = try await provider.validAccessToken()
@@ -110,7 +128,9 @@ final class AuthTests: XCTestCase {
     }
 
     func testClaimsDecodeDisplayName() {
-        let tokens = TokenSet(accessToken: fakeJWT(#"{"given_name":"Dan","name":"Dan F","email":"d@example.com"}"#), refreshToken: nil, expiresAt: .distantFuture)
+        let tokens = TokenSet(accessToken: fakeJWT(#"{"given_name":"Dan","name":"Dan F","email":"d@example.com"}"#), expiresAt: .distantFuture)
         XCTAssertEqual(tokens.claims?.displayName, "Dan")
+        let noName = TokenSet(accessToken: fakeJWT(#"{"given_name":"","email":"d@example.com"}"#), expiresAt: .distantFuture)
+        XCTAssertEqual(noName.claims?.displayName, "d@example.com")
     }
 }
