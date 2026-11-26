@@ -26,6 +26,13 @@ public struct TrackManConfig: Sendable, Equatable {
 
     public var sessionURL: URL { URL(string: sessionPath, relativeTo: portalURL)!.absoluteURL }
     public var portalHost: String { portalURL.host ?? "portal.trackmangolf.com" }
+    /// The domain whose cookies hold the TrackMan session: the portal's own
+    /// cookie plus the login server's, which lets a new portal session start
+    /// without the password.
+    public var cookieDomain: String {
+        let parts = portalHost.split(separator: ".")
+        return parts.suffix(2).joined(separator: ".")
+    }
     /// Sent as Origin/Referer on API calls, matching the web portal.
     public var webOrigin: String { "https://\(portalHost)" }
 

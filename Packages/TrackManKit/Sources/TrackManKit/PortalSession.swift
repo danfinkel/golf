@@ -40,17 +40,20 @@ public struct PortalSessionClient: TokenRefresher {
     let config: TrackManConfig
     let transport: HTTPTransport
     let cookies: @Sendable () async -> [HTTPCookie]
+    let onCookies: @Sendable ([HTTPCookie]) async -> Void
     let now: @Sendable () -> Date
 
     public init(
         config: TrackManConfig = .portal,
         transport: HTTPTransport = URLSession(configuration: .ephemeral),
         cookies: @escaping @Sendable () async -> [HTTPCookie],
+        onCookies: @escaping @Sendable ([HTTPCookie]) async -> Void = { _ in },
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.config = config
         self.transport = transport
         self.cookies = cookies
+        self.onCookies = onCookies
         self.now = now
     }
 
@@ -78,6 +81,12 @@ public struct PortalSessionClient: TokenRefresher {
               !tokens.isExpired(at: now()) else {
             throw AuthError.reauthenticationRequired
         }
+        // The portal may slide its session forward; keep any cookie it sets.
+        let fields = response.allHeaderFields.reduce(into: [String: String]()) { result, pair in
+            if let key = pair.key as? String, let value = pair.value as? String { result[key] = value }
+        }
+        let updated = HTTPCookie.cookies(withResponseHeaderFields: fields, for: config.sessionURL)
+        if !updated.isEmpty { await onCookies(updated) }
         return tokens
     }
 }

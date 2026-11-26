@@ -41,9 +41,17 @@ itself. Instead it signs in through the portal, like a browser:
 2. Once the web view is back on the portal, the app reads the portal's
    `/api/account/me`, which returns the bearer token the portal itself uses
    (valid 7 days). The token is stored in the Keychain.
-3. The web view keeps the portal session cookie. When the token expires, the
-   app calls `/api/account/me` again with that cookie for a fresh one, so you
-   only sign in again when the portal session ends.
+3. The app saves TrackMan's cookies (portal and login) in the Keychain and
+   puts them back into the web view at launch, because session cookies do
+   not survive iOS closing the app. When the token expires, the app calls
+   `/api/account/me` again with those cookies for a fresh one, and keeps any
+   cookie the portal renews.
+4. If TrackMan ends the session anyway, the app reopens the login sheet. The
+   saved login cookie usually signs you straight back in; if not, the
+   TrackMan page accepts iPhone password AutoFill (the key above the
+   keyboard). The app never sees or stores your password.
+
+Only **Sign out** in Settings clears the token and the saved cookies.
 
 This relies on undocumented portal behaviour that TrackMan could change. The
 URLs live in `Packages/TrackManKit/Sources/TrackManKit/TrackManConfig.swift`.

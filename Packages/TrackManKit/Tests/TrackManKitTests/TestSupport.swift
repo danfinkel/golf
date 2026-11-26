@@ -4,19 +4,23 @@ import Foundation
 /// Replays canned responses and records requests.
 final class StubTransport: HTTPTransport, @unchecked Sendable {
     private let lock = NSLock()
-    private var queue: [(Int, Data)]
+    private var queue: [(Int, Data, [String: String])]
     private(set) var requests: [URLRequest] = []
 
     init(_ responses: [(Int, String)]) {
-        queue = responses.map { ($0.0, Data($0.1.utf8)) }
+        queue = responses.map { ($0.0, Data($0.1.utf8), [:]) }
+    }
+
+    init(withHeaders responses: [(Int, String, [String: String])]) {
+        queue = responses.map { ($0.0, Data($0.1.utf8), $0.2) }
     }
 
     func send(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
-        let next: (Int, Data) = lock.withLock {
+        let next: (Int, Data, [String: String]) = lock.withLock {
             requests.append(request)
-            return queue.isEmpty ? (500, Data()) : queue.removeFirst()
+            return queue.isEmpty ? (500, Data(), [:]) : queue.removeFirst()
         }
-        let response = HTTPURLResponse(url: request.url!, statusCode: next.0, httpVersion: nil, headerFields: nil)!
+        let response = HTTPURLResponse(url: request.url!, statusCode: next.0, httpVersion: nil, headerFields: next.2)!
         return (next.1, response)
     }
 
