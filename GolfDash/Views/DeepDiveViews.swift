@@ -236,8 +236,13 @@ struct DeepDiveChartView: View {
         switch chart {
         case .histogram(_, let metric, let bins):
             Chart(bins) { bin in
-                BarMark(x: .value(metric.label, bin.mid), y: .value("Shots", bin.count), width: .ratio(0.9))
-                    .foregroundStyle(Theme.fairway)
+                // Numeric x needs explicit start and end, or the bars have no width.
+                BarMark(
+                    xStart: .value(metric.label, bin.lower + (bin.upper - bin.lower) * 0.04),
+                    xEnd: .value(metric.label, bin.upper - (bin.upper - bin.lower) * 0.04),
+                    y: .value("Shots", bin.count)
+                )
+                .foregroundStyle(Theme.fairway)
             }
             .chartXAxisLabel(metric.unit)
             .frame(height: 160)
