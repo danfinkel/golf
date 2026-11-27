@@ -13,9 +13,11 @@ def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
     auth = token(sys.argv[1])
-    stroke = describe(auth, "Stroke")
-    if not stroke:
-        sys.exit("No Stroke type found.")
+    session = describe(auth, "SessionActivityInterface")
+    strokes = next((f for f in session.get("fields") or [] if f["name"] == "strokes"), None)
+    if not strokes:
+        sys.exit("No strokes field found on SessionActivityInterface.")
+    stroke = describe(auth, base_type(strokes["type"])["name"])
     for field in stroke.get("fields") or []:
         inner = base_type(field["type"])
         print(f"stroke.{field['name']}  ({inner.get('name')})")
