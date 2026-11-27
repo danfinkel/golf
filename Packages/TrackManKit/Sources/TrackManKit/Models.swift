@@ -121,6 +121,15 @@ public struct Stroke: Decodable, Sendable, Equatable {
         public let total: Double?
         public let carrySide: Double?
         public let maxHeight: Double?
+        public let faceToPath: Double?
+        public let launchDirection: Double?
+        public let spinAxis: Double?
+        public let totalSide: Double?
+        // Requested only once the schema confirms them; nil until then.
+        public let dynamicLoft: Double?
+        public let curve: Double?
+        public let impactOffset: Double?
+        public let impactHeight: Double?
     }
 
     public var date: Date? { TrackManDate.parse(time) }

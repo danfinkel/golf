@@ -14,6 +14,9 @@ final class SyncService: ObservableObject {
     /// The player's TrackMan handicap from the last successful sync.
     @Published private(set) var handicap: Double? = UserDefaults.standard.object(forKey: SyncService.handicapKey) as? Double
 
+    /// Bump when the shot query gains fields, so old sessions refetch.
+    static let shotFieldsVersion = 2
+
     private static let lastSyncedKey = "lastSynced"
     private static let handicapKey = "trackmanHandicap"
 
@@ -72,7 +75,7 @@ final class SyncService: ObservableObject {
     private func fetchShots(api: TrackManAPI, context: ModelContext) async throws {
         defer { progress = nil }
         let pending = try context.fetch(FetchDescriptor<StoredActivity>(sortBy: [SortDescriptor(\StoredActivity.date, order: .reverse)]))
-            .filter { !$0.shotsFetched && ($0.strokeCount ?? 0) > 0 && Metrics.isFullSwing(typename: $0.typename, kind: $0.kind) }
+            .filter { (!$0.shotsFetched || $0.shotFieldsVersion < Self.shotFieldsVersion) && ($0.strokeCount ?? 0) > 0 && Metrics.isFullSwing(typename: $0.typename, kind: $0.kind) }
         for (index, activity) in pending.enumerated() {
             progress = "Loading shots, session \(index + 1) of \(pending.count)"
             let strokes: [Stroke]
@@ -87,6 +90,7 @@ final class SyncService: ObservableObject {
                 context.insert(StoredShot(activityID: activity.id, index: number, sessionDate: activity.date, stroke: stroke))
             }
             activity.shotsFetched = true
+            activity.shotFieldsVersion = Self.shotFieldsVersion
             if index % 10 == 9 { try context.save() }
         }
         try context.save()

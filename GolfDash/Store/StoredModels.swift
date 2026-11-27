@@ -93,6 +93,9 @@ final class StoredActivity {
     var strokeCount: Int?
     /// True once this session's shots are stored as StoredShot rows.
     var shotsFetched: Bool = false
+    /// Which version of the shot fields was downloaded; sessions below
+    /// `SyncService.shotFieldsVersion` are fetched again.
+    var shotFieldsVersion: Int = 0
 
     init(id: String, typename: String, date: Date) {
         self.id = id
@@ -129,6 +132,18 @@ final class StoredShot {
     var carry: Double?
     var total: Double?
     var carrySide: Double?
+    // Added for the deep dive.
+    var clubPath: Double?
+    var faceAngle: Double?
+    var faceToPath: Double?
+    var dynamicLoft: Double?
+    var launchDirection: Double?
+    var spinAxis: Double?
+    var totalSide: Double?
+    var curve: Double?
+    var maxHeight: Double?
+    var impactOffset: Double?
+    var impactHeight: Double?
 
     init(activityID: String, index: Int, sessionDate: Date, stroke: Stroke) {
         id = "\(activityID)#\(index)"
@@ -145,6 +160,32 @@ final class StoredShot {
         carry = m?.carry
         total = m?.total
         carrySide = m?.carrySide
+        clubPath = m?.clubPath
+        faceAngle = m?.faceAngle
+        faceToPath = m?.faceToPath
+        dynamicLoft = m?.dynamicLoft
+        launchDirection = m?.launchDirection
+        spinAxis = m?.spinAxis
+        totalSide = m?.totalSide
+        curve = m?.curve
+        maxHeight = m?.maxHeight
+        impactOffset = m?.impactOffset
+        impactHeight = m?.impactHeight
+    }
+
+    /// Everything measured on this shot, for the deep dive.
+    var record: ShotRecord {
+        let pairs: [(ShotMetric, Double?)] = [
+            (.clubSpeed, clubSpeed), (.ballSpeed, ballSpeed), (.smashFactor, smashFactor),
+            (.attackAngle, attackAngle), (.clubPath, clubPath), (.faceAngle, faceAngle), (.faceToPath, faceToPath),
+            (.dynamicLoft, dynamicLoft), (.launchAngle, launchAngle), (.launchDirection, launchDirection),
+            (.spinRate, spinRate), (.spinAxis, spinAxis), (.carry, carry), (.total, total),
+            (.carrySide, carrySide), (.totalSide, totalSide), (.curve, curve), (.maxHeight, maxHeight),
+            (.impactOffset, impactOffset), (.impactHeight, impactHeight),
+        ]
+        var values: [ShotMetric: Double] = [:]
+        for (metric, value) in pairs { if let value { values[metric] = value } }
+        return ShotRecord(sessionID: activityID, date: date, club: club, values: values)
     }
 
     var sample: ShotSample {

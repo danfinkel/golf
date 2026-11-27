@@ -13,6 +13,7 @@ struct HomeView: View {
     @Query(sort: \StoredActivity.date) private var activities: [StoredActivity]
     @State private var showSettings = false
     @State private var month = Date()
+    @State private var showDeepDive = false
 
     private var samples: [ActivitySample] { activities.map(\.sample) }
     private var thisMonth: DateInterval? { HomeMetrics.month(containing: Date()) }
@@ -60,6 +61,28 @@ struct HomeView: View {
                         StatTile(label: "Streak", value: "\(streak) \(streak == 1 ? "day" : "days")",
                                  detail: "Days in a row on TrackMan")
                     }
+                    Button {
+                        showDeepDive = true
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image(systemName: "sparkle.magnifyingglass")
+                                .font(.title2)
+                                .foregroundStyle(Theme.flag)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Analyze sessions").font(.headline).foregroundStyle(.white)
+                                Text("Path, speed, strike or ball flight").font(.subheadline).foregroundStyle(.white.opacity(0.8))
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right").foregroundStyle(.white.opacity(0.7))
+                        }
+                        .padding()
+                        .background(
+                            LinearGradient(colors: [Color(red: 0.14, green: 0.40, blue: 0.25), Color(red: 0.06, green: 0.20, blue: 0.13)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing),
+                            in: RoundedRectangle(cornerRadius: 16)
+                        )
+                    }
+                    .buttonStyle(.plain)
                     MonthCalendarCard(month: $month, activities: samples, roundDates: rounds.map(\.date))
                     if let latest = rounds.last {
                         NavigationLink {
@@ -93,6 +116,9 @@ struct HomeView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(sync: sync)
+            }
+            .fullScreenCover(isPresented: $showDeepDive) {
+                DeepDiveFlow()
             }
         }
     }

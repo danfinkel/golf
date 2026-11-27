@@ -105,6 +105,10 @@ public enum Queries {
               total
               carrySide
               maxHeight
+              faceToPath
+              launchDirection
+              spinAxis
+              totalSide
             }
           }
         }
