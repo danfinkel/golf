@@ -32,7 +32,7 @@ public struct GraphQLClient: Sendable {
         self.tokens = tokens
     }
 
-    public func execute<Response: Decodable>(_ operation: GraphQLOperation, variables: [String: Int], as type: Response.Type) async throws -> Response {
+    public func execute<Response: Decodable>(_ operation: GraphQLOperation, variables: [String: any Sendable], as type: Response.Type) async throws -> Response {
         var token = try await tokens.validAccessToken()
         var (data, response) = try await transport.send(request(operation, variables: variables, token: token))
         if response.statusCode == 401 {
@@ -51,7 +51,7 @@ public struct GraphQLClient: Sendable {
         return result
     }
 
-    func request(_ operation: GraphQLOperation, variables: [String: Int], token: String) -> URLRequest {
+    func request(_ operation: GraphQLOperation, variables: [String: any Sendable], token: String) -> URLRequest {
         var components = URLComponents(url: config.graphQLURL, resolvingAgainstBaseURL: false)!
         components.queryItems = [URLQueryItem(name: "fe_query", value: operation.name)]
         var request = URLRequest(url: components.url!)
@@ -65,7 +65,7 @@ public struct GraphQLClient: Sendable {
         let body: [String: Any] = [
             "operationName": operation.name,
             "query": operation.query,
-            "variables": variables,
+            "variables": variables as [String: Any],
         ]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body)
         return request

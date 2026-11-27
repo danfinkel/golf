@@ -11,13 +11,13 @@ public struct KeychainError: Error, Equatable {
     public let status: OSStatus
 }
 
-/// Stores the token set as one generic-password Keychain item, readable only
-/// on this device after first unlock (so background refresh works).
-public struct KeychainTokenStore: TokenStore {
+/// One generic-password Keychain item holding raw data, readable only on
+/// this device after first unlock (so background refresh works).
+public struct KeychainItem: Sendable {
     public let service: String
     public let account: String
 
-    public init(service: String = "GolfDash.TrackMan", account: String = "tokens") {
+    public init(service: String, account: String) {
         self.service = service
         self.account = account
     }
@@ -30,7 +30,7 @@ public struct KeychainTokenStore: TokenStore {
         ]
     }
 
-    public func load() throws -> TokenSet? {
+    public func load() throws -> Data? {
         var query = baseQuery
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
@@ -38,11 +38,10 @@ public struct KeychainTokenStore: TokenStore {
         let status = SecItemCopyMatching(query as CFDictionary, &item)
         if status == errSecItemNotFound { return nil }
         guard status == errSecSuccess, let data = item as? Data else { throw KeychainError(status: status) }
-        return try JSONDecoder().decode(TokenSet.self, from: data)
+        return data
     }
 
-    public func save(_ tokens: TokenSet) throws {
-        let data = try JSONEncoder().encode(tokens)
+    public func save(_ data: Data) throws {
         let update: [String: Any] = [kSecValueData as String: data]
         var status = SecItemUpdate(baseQuery as CFDictionary, update as CFDictionary)
         if status == errSecItemNotFound {
@@ -57,6 +56,28 @@ public struct KeychainTokenStore: TokenStore {
     public func clear() throws {
         let status = SecItemDelete(baseQuery as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else { throw KeychainError(status: status) }
+    }
+}
+
+/// Stores the token set as one Keychain item.
+public struct KeychainTokenStore: TokenStore {
+    private let item: KeychainItem
+
+    public init(service: String = "GolfDash.TrackMan", account: String = "tokens") {
+        item = KeychainItem(service: service, account: account)
+    }
+
+    public func load() throws -> TokenSet? {
+        guard let data = try item.load() else { return nil }
+        return try JSONDecoder().decode(TokenSet.self, from: data)
+    }
+
+    public func save(_ tokens: TokenSet) throws {
+        try item.save(JSONEncoder().encode(tokens))
+    }
+
+    public func clear() throws {
+        try item.clear()
     }
 }
 

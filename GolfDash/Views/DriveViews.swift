@@ -32,7 +32,7 @@ struct DriveChart: View {
                     x: .value("Date", point.date),
                     y: .value("Yards", point.yards)
                 )
-                .foregroundStyle(.gray.opacity(0.45))
+                .foregroundStyle(Theme.fairway.opacity(0.7))
                 .symbolSize(24)
             }
             ForEach(points.filter { $0.rollingYards != nil }) { point in
@@ -40,9 +40,17 @@ struct DriveChart: View {
                     x: .value("Date", point.date),
                     y: .value("Rolling average", point.rollingYards ?? 0)
                 )
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(Theme.pine)
                 .lineStyle(StrokeStyle(lineWidth: 3, lineCap: .round))
                 .interpolationMethod(.monotone)
+            }
+            if let latest = points.last(where: { $0.rollingYards != nil }), let yards = latest.rollingYards {
+                PointMark(
+                    x: .value("Date", latest.date),
+                    y: .value("Rolling average", yards)
+                )
+                .foregroundStyle(Theme.flag)
+                .symbolSize(90)
             }
         }
         .chartYScale(domain: .automatic(includesZero: false))
@@ -98,18 +106,22 @@ struct DriveDetailView: View {
             Section("Rounds") {
                 ForEach(points.reversed()) { point in
                     let round = roundsByID[point.id]
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(round?.courseName ?? "Course round")
-                            Text("\(point.date, format: .dateTime.month().day().year())\(round?.holesPlayed.map { " · \($0) holes" } ?? "")")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing) {
-                            Text(Format.yards(point.yards) ?? "").monospacedDigit()
-                            if let max = Format.yards(round?.driveMaxMeters.map(Units.yards(fromMeters:))) {
-                                Text("max \(max)").font(.footnote).foregroundStyle(.secondary)
+                    NavigationLink {
+                        if let round { RoundDetailView(round: round) }
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text(round?.courseName ?? "Course round")
+                                Text("\(point.date, format: .dateTime.month().day().year())\(round?.holesPlayed.map { " · \($0) holes" } ?? "")")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing) {
+                                Text(Format.yards(point.yards) ?? "").monospacedDigit()
+                                if let max = Format.yards(round?.driveMaxMeters.map(Units.yards(fromMeters:))) {
+                                    Text("max \(max)").font(.footnote).foregroundStyle(.secondary)
+                                }
                             }
                         }
                     }

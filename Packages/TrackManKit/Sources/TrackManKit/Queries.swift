@@ -15,10 +15,35 @@ public enum Queries {
           numberOfHolesPlayed
           isCompleted
           grossScore
+          netScore
           toPar
+          outScore
+          inScore
+          courseHcp
           stat {
             driveAverage
             driveMax
+            highestBallSpeed
+            fairwayHitFairway
+            fairwayHitLeft
+            fairwayHitRight
+            greenInRegulation
+            numberOfPutts
+            eagles
+            birdies
+            pars
+            bogeys
+            doubleBogeys
+            tripleBogeysOrWorse
+          }
+          holes {
+            holeNumber
+            par
+            strokeIndex
+            distance
+            grossScore
+            putts
+            greenInRegulation
           }
         }
       }
@@ -43,6 +68,48 @@ public enum Queries {
             ... on ShotAnalysisSessionActivity { strokeCount }
             ... on TracySessionActivity { strokeCount }
             ... on MapMyBagSessionActivity { strokeCount }
+          }
+        }
+      }
+    }
+    """)
+
+    /// The player's current TrackMan handicap.
+    public static let handicap = GraphQLOperation(name: "Handicap", query: """
+    query Handicap {
+      me {
+        hcp { currentHcp }
+      }
+    }
+    """)
+
+    /// Every stroke of one practice session, by the activity's node id.
+    public static let sessionStrokes = GraphQLOperation(name: "SessionStrokes", query: """
+    query SessionStrokes($id: ID!) {
+      node(id: $id) {
+        __typename
+        ... on SessionActivityInterface {
+          strokes {
+            time
+            club
+            measurement {
+              clubSpeed
+              ballSpeed
+              smashFactor
+              attackAngle
+              clubPath
+              faceAngle
+              launchAngle
+              spinRate
+              carry
+              total
+              carrySide
+              maxHeight
+              faceToPath
+              launchDirection
+              spinAxis
+              totalSide
+            }
           }
         }
       }
